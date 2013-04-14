@@ -1,0 +1,7 @@
+<?php
+$streamContext = stream_context_create();
+stream_context_set_option($streamContext, 'ssl', 'local_cert', '/home/jqt3of5/Documents/zoneserver/ssl/zonecert.pem');
+stream_context_set_option($streamContext, 'ssl', 'private_key', '/home/jqt3of5/Documents/zoneserver/ssl/zonekey.pem');
+
+$this->apnsConnection = stream_socket_client('ssl://localhost:8000', $error, $errorString, 60, STREAM_CLIENT_CONNECT, $streamContext);
+?>

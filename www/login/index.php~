@@ -1,0 +1,168 @@
+<?php
+require_once "accesscontrol.php";
+require_once "dbinfo.php";
+?>
+
+<html>
+  <head>
+
+<script>
+
+function $(id)
+{
+  return document.getElementById(id);
+}
+
+var response = "";
+function zoneEdit(command, domain, zone,  type, value)
+{
+  var xmlhttp;
+  if (window.XMLHttpRequest)
+    {
+	// code for IE7+, Firefox, Chrome, Opera, Safari
+	xmlhttp=new XMLHttpRequest();
+    }
+
+  xmlhttp.onreadystatechange = function(){
+      response += xmlhttp.responseText + "\n";
+  }
+
+  xmlhttp.open('GET', "zoneedit.php?command="+command+"&domain=" + domain +"&zone=" + zone + "&type=" + type +"&value=" + value, false);
+  xmlhttp.send();
+}
+
+var ZoneEnum = {UPDATE: "update", ADD: "add", DELETE: "delete"};
+var _rowsToCommit = new Array();
+var _oldRows = new Array();
+function createEditableRow(index)
+{
+
+return "<td><input type='text' id='domain"+index+"'></input>\
+     <select id='zone"+index+"'>\
+         <option value='jqt3of5.com'>jqt3of5.com</option>\
+     </select></td>\
+ <td><select id='type"+index+"'>\
+     <option value='A'>A</option>\
+     <option value='CNAME'>CNAME</option>\
+ </select></td>\
+ <td><input type='text' id='value"+index+"'></input></td>\
+ <td><a href='javascript:void(0)' onClick='deleterow("+index+")'>Delete</a></td>";
+}
+
+function deleterow(index)
+{
+  var row = $('row'+index);
+  row.parentElement.removeChild(row);
+  row = null;
+
+  delete _rowsToCommit[index];
+}
+function editrow(index)
+{
+  var row = $('row'+index);
+  _oldRows[index] = row.innerHTML;
+  row.innerHTML = createEditableRow(index);
+  _rowsToCommit[index] = ZoneEnum.UPDATE;
+
+  //populate with data
+  //......................
+}
+function addrow()
+{
+  var table = $('domainTable');
+  var rowCount = table.rows.length;
+  var newRow = table.insertRow(rowCount);
+  newRow.id = 'row'+rowCount;
+  newRow.innerHTML = createEditableRow(rowCount);
+  _rowsToCommit[rowCount] = ZoneEnum.ADD;
+}
+
+function submitChanges()
+{
+    for (var i in _rowsToCommit)
+    {
+	if (_rowsToCommit[i] == ZoneEnum.UPDATE)
+	{
+	    //if this commits domain or zone is different that it use to be, delete then add - not update
+	    //...........................................
+//	    var control = document.createElement(_oldRows[i]);
+
+//	    if ($('domain'+i).value != control.childElements[0].innerHTML)
+//	    {
+//		alert('this should do soemthing different');
+//	    }
+	    
+	    zoneEdit("update", $('domain'+i).value, $('zone'+i).value, $('type'+i).value, $('value'+i).value);
+	} else if (_rowsToCommit[i] == ZoneEnum.ADD) {
+	    zoneEdit("add", $('domain'+i).value, $('zone'+i).value, $('type'+i).value, $('value'+i).value);
+	}
+    }
+
+    alert(response);
+
+}
+
+function onLoad()
+{
+    var table = $('domainTable');
+
+    for (var i = 1, row; row = table.rows[i]; ++i)
+    {
+	var deleteCell = row.insertCell(-1);
+
+	var re = /^(.*)\.(jqt3of5\.com)$/;
+
+	if (!re.test(row.cells[0].innerHTML))
+	{
+	    
+	}
+	var domain = RegExp.$1;
+	var zone = RegExp.$2;
+	deleteCell.innerHTML = "<a href='javascript:void(0)' onClick=\"deleterow("+i+"); zoneEdit('delete', '"+domain+"', '"+zone+"', 0); \">Delete</a>";
+	var editCell = row.insertCell(-1);
+	editCell.innerHTML = "<a href='javascript:void(0)' onClick='editrow("+i+")'>Edit</a>";;
+
+    }
+}
+</script>
+
+  </head>
+
+  <body onload="onLoad()">
+    <h4> <?php echo $_SESSION['userid'] ?> is logged in! <a href="logout.php">Logout</a> </h4>
+<?php
+
+$con = mysql_connect($dbhost, $dbuser, $dbpwd) or die("Connection Failed");
+mysql_select_db($db, $con);
+
+$result = mysql_query("SELECT domain, zone FROM domains WHERE userid='$_SESSION[userid]'");
+
+//This code should be changed  into a list of zones that can be edited. 
+//Requests get sent to  zoneedit.php, verifications happens there
+echo "<div id='response'> </div>";
+echo "<table border='1' id='domainTable'>\n";
+echo "<tr> <td><b>Domains Available</b></td> <td><b>Type</b></td> <td><b>Value</b></td></tr>\n";
+$index = 1;
+while ($row = mysql_fetch_array($result))
+  {
+    //use this spot to request from nodejs
+    //========================================
+
+    echo "<tr id='row$index'>\n";
+    echo "<td id='domain$index'>".$row['domain'].".".$row['zone']."</td>\n";
+    echo "<td id='type$index'>A</td>\n";
+    echo "<td id='value$index'>Undefined</td>\n";
+    echo "</tr>\n";
+    $index += 1;
+  }
+echo "</table>\n";
+
+?>
+
+<button id="addDomain" onClick="addrow()">Add Row</button>
+<button id="submitChanges" onClick="submitChanges();location.reload();">Submit</button>
+
+<br><br>
+
+  </body>
+</html>
