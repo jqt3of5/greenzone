@@ -6,6 +6,24 @@ function $(id)
 
 var response = "";
 
+//batch edit
+function zoneEditBatch(json)
+{
+  var xmlhttp;
+  if (window.XMLHttpRequest)
+    {
+	// code for IE7+, Firefox, Chrome, Opera, Safari
+	xmlhttp=new XMLHttpRequest();
+    }
+
+  xmlhttp.onreadystatechange = function(){
+      response += xmlhttp.responseText;
+  }
+
+  xmlhttp.open('GET', "zoneedit.php?json="+json, false);
+  xmlhttp.send();
+    
+}
 function zoneEdit(command, domain, zone,  type, value)
 {
   var xmlhttp;
@@ -98,39 +116,68 @@ function addrow()
 
 function submitChanges()
 {
+    var result = new Array();
     for (var i in _rowsToCommit)
     {
-	if (_rowsToCommit[i] == ZoneEnum.UPDATE)
-	{
-	    //if this commits domain or zone is different that it use to be, delete then add - not update
-	    //...........................................
-//	    var control = document.createElement(_oldRows[i]);
+	var newRequest = {};
+	var domain, zone, type, value;
 
-//	    if ($('domain'+i).value != control.childElements[0].innerHTML)
-//	    {
-//		alert('this should do soemthing different');
-//	    }
+	if (_rowsToCommit[i] != ZoneEnum.ADD)
+	{
 	    var re = /^(.*)\.(jqt3of5\.com)$/;
 	    if (!re.test($('row'+i).cells[0].innerHTML))
 	    {
 		console.log($('row'+i).cells[0].innerHTML);
 		console.log("failed?");
 	    }
-	    var domain = RegExp.$1;
-	    var zone = RegExp.$2;
-
-	    zoneEdit("update", domain, zone, $('type'+i).value, $('value'+i).value);
-	} else if (_rowsToCommit[i] == ZoneEnum.ADD) {
-	    zoneEdit("add", $('domain'+i).value, $('zone'+i).value, $('type'+i).value, $('value'+i).value);
-	} else if (_rowsToCommit[i] == ZoneEnum.DELETE) {
-	    var re = /^(.*)\.(jqt3of5\.com)$/;
-	    if (!re.test($('row'+i).cells[0].innerHTML));
-	    var domain = RegExp.$1;
-	    var zone = RegExp.$2;
-	    zoneEdit("delete", domain, zone, $('type'+i).value, $('value'+i).value);
+	    domain = RegExp.$1;
+	    zone = RegExp.$2;
+	    if (_rowsToCommit[i] == ZoneEnum.UPDATE)
+	    {
+ 		type = $('type'+i).value;
+		value = $('value'+i).value;
+	    }else if (_rowsToCommit[i] == ZoneEnum.DELETE){
+ 		type = $('type'+i).innerHTML;
+		value = $('value'+i).innerHTML;
+	    }
 	}
-    }
+	else if (_rowsToCommit[i] == ZoneEnum.ADD){
+	    domain = $('domain'+i).value
+	    zone = $('zone'+i).value
+	    type = $('type'+i).value;
+	    value = $('value'+i).value;
+	    
+	}
+	newRequest.command = _rowsToCommit[i];
+	newRequest.domain = domain;
+	newRequest.zone = zone;
+	newRequest.type = type; 
+	newRequest.value = value; 
+	result.push(newRequest);
 
+	// if (_rowsToCommit[i] == ZoneEnum.UPDATE)
+	// {
+	//     var re = /^(.*)\.(jqt3of5\.com)$/;
+	//     if (!re.test($('row'+i).cells[0].innerHTML))
+	//     {
+	// 	console.log($('row'+i).cells[0].innerHTML);
+	// 	console.log("failed?");
+	//     }
+	//     var domain = RegExp.$1;
+	//     var zone = RegExp.$2;
+	//     zoneEdit("update", domain, zone, $('type'+i).value, $('value'+i).value);
+	// } else if (_rowsToCommit[i] == ZoneEnum.ADD) {
+	//     zoneEdit("add", $('domain'+i).value, $('zone'+i).value, $('type'+i).value, $('value'+i).value);
+	// } else if (_rowsToCommit[i] == ZoneEnum.DELETE) {
+	//     var re = /^(.*)\.(jqt3of5\.com)$/;
+	//     if (!re.test($('row'+i).cells[0].innerHTML));
+	//     var domain = RegExp.$1;
+	//     var zone = RegExp.$2;
+	//     zoneEdit("delete", domain, zone, $('type'+i).value, $('value'+i).value);
+	// }
+    }
+    alert(JSON.stringify(result));
+    zoneEditBatch(JSON.stringify(result));
     alert(response);
 
 }
@@ -141,19 +188,14 @@ window.onload = function()
 
     for (var i = 1, row; row = table.rows[i]; ++i)
     {
-	var deleteCell = row.insertCell(-1);
+	var editCell = $("edit" + i);
+	var deleteCell = $("delete"+i);
+	var domain = $("domain" + i);
+	var zone = $("zone" + i);
+	var type = $("type" + i);
+	var value = $("value" + i);
 
-	var re = /^(.*)\.(jqt3of5\.com)$/;
-
-	if (!re.test(row.cells[0].innerHTML))
-	{
-	    
-	}
-	var domain = RegExp.$1;
-	var zone = RegExp.$2;
-	deleteCell.innerHTML = "<a href='javascript:void(0)' onClick=\"deleterow("+i+");\">Delete</a>";
-	var editCell = row.insertCell(-1);
-	editCell.innerHTML = "<a href='javascript:void(0)' onClick='editrow("+i+")'>Edit</a>";;
-
+	deleteCell.innerHTML = "<a href='javascript:void(0)' onClick=\"zoneEdit('delete','"+domain+"','"+zone+"','"+type+"','"+value+"');location.reload();\">Delete</a>";
+	editCell.innerHTML = "<a href='newDomain.php?command=edit&domain="+domain+"&zone="+zone+"'>Edit</a>";;
     }
 };
