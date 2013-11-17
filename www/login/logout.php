@@ -1,8 +1,9 @@
 <?php
+require_once "../login/dbinfo.php";
 
 session_start();
 
-$con = mysql_connect('localhost', 'users', 'diogee');
+$con = mysql_connect($dbhost, $dbuser, $dbpwd);
 	
 if (! $con)
   {
