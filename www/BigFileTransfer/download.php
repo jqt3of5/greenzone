@@ -5,12 +5,12 @@
 	 $con = mysql_connect($dbhost, $dbuser, $dbpwd) or die("Connection Failed");
 	 mysql_select_db($db, $con);
 	 
-	 $result = mysql_query("SELECT fileName, user, count FROM files WHERE guid='$_GET[guid]'");
+	 $result = mysql_query("SELECT fileName, userid, count FROM files WHERE guid='$_GET[guid]'");
 	 $row = mysql_fetch_assoc($result);
 	 
-	 if (isset($row['user']))
+	 if (!empty($row['userid']))
 	 {
-	     $path = "/home/$row[user]/upload/$row[fileName]";	
+	     $path = "/home/$row[userid]/upload/$row[fileName]";	
 	 }
 	 else
 	 {
@@ -26,7 +26,7 @@
 	 $fsize = filesize($path);
 	 
 	 header('Content-type: application/octet-stream');
-	 header("Content-Disposition: attachment; filename=$row[fileName]");
+	 header("Content-Disposition: attachment; filename=\"$row[fileName]\"");
 	 header("Content-length: $fsize");
 	 header('Cache-control: no-cache, must-revalidate'); //use this to open files directly
 	 while(!feof($fd)) 

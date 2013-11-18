@@ -8,7 +8,7 @@ require_once "dbinfo.php";
      {
 	$con = mysql_connect($dbhost, $dbuser, $dbpwd);
 	
-	if (! $con)
+	if (!$con)
 	  {
 	    die ('Could not connect: ' . mysql_error());
 	  }
@@ -24,10 +24,10 @@ require_once "dbinfo.php";
 	    exit;
 	  }
 	$hash = crypt($_POST['password']);
-        if (exec("sudo /usr/sbin/useradd -s '/bin/false' -m -p '$hash' $_POST[userid]") > 0)
-        {
-            Header("Location: signup.php?error=Failed to add to linux");
-        }
+        exec("sudo /usr/sbin/useradd -s '/bin/false' -m -p '$hash' $_POST[userid]");
+        exec("sudo /bin/chown .www-data /home/$_POST[userid]");
+        exec("sudo /bin/chmod g+w /home/$_POST[userid]");
+        exec("sudo /bin/mkdir /home/$_POST[userid]/upload");
 	$result = mysql_query("INSERT INTO users VALUES ('$_POST[userid]', '$_POST[email]', '$hash');");
 	Header("Location: login.php");
        exit;
