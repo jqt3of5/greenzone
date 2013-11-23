@@ -5,15 +5,21 @@ if (!session_start())
     echo "Fail!";
     exit;
   }
-
 require_once "../login/dbinfo.php";
 ?>
 
 <html>
   <head>
+    <script src="FileList.js"></script>  
+    <script>
+	window.onload=function(){
+		InitFileList();
+	};
+    </script>
   </head>
 
   <body style="background: grey;">
+
     <div style="text-align: center; background: grey">
       <div id='header'  style="text-align: right;"> 
 	<?php
@@ -30,40 +36,38 @@ require_once "../login/dbinfo.php";
       <div style="margin-left: auto; margin-right: auto; width: 400px; background: #00aa00; overflow: hidden; border:3px solid; border-radius:20px;">
 	<h1>Big File Transfer</h1><br>
 	When E-Mail isn\'t enough. Use this utility to transfer large files. <br><br>
-        Drag and drop files into the region below, or use the form. 
+        Drag and drop files into the region below
 	<div id='uploadRegion' style="background: #00ff00; height: 100px; width: 70%; margin-left: auto; margin-right: auto; border-radius: 15px;"> 
-	 </div>
+      </div>
 
-    <!--<form action="upload.php" method="post" enctype="multipart/form-data">
-	    <input type="file" name="file" id="file"><br>
-	    <input type="submit" value="Submit">
-	  </form>-->
-	
-    <p>Upload progress: <progress id="uploadprogress" min="0" max="100" value="0">0</progress></p>
-	<div id='fileListRegion' style="background: darkgrey; ">
-	  <table style="width: 100%; text-align: center;" id="filesTable">
-	    <?php
+      <p>Upload progress: <progress id="uploadprogress" min="0" max="100" value="0">0</progress></p>
+
+      <div id="fileListDiv" style="background: darkgrey;">
+      	    <?php
+
 	       if (isset($_SESSION['userid']))
 	       {
 		   $con = mysql_connect($dbhost, $dbuser, $dbpwd) or die("Connection Failed");
 		   mysql_select_db($db, $con);
 	       
 		   $result = mysql_query("SELECT guid, fileName FROM files WHERE userid='$_SESSION[userid]'");
+		   $fileItemJson = "{";
 		   while ($row = mysql_fetch_array($result))
 		   {
-		       echo "<tr>";
-		       echo "<td><a href='/BigFileTransfer/download.php?guid=$row[guid]'>$row[fileName]</a></td>";
-		       echo "</tr>";
+			$fileItemJson = $fileItemJson . "\"$row[guid]\":{name:\"$row[fileName]\", size:0, date: \"1/1/1970\"},";
+			echo "<a class='fileItem' id='$row[guid]' href='/BigFileTransfer/download.php?guid=$row[guid]'>$row[fileName]</a><br>\n";
 		   }
-
-		   mysql_close($con);
+		   $fileItemJson = $fileItemJson . "}";
+		   mysql_close($con); 
+		   echo "<script> fileItemInfos = $fileItemJson </script>\n";
 	       }
 	       ?>
-	  </table>
-
+	       <div id="fileInfoView" style="display: none;  position: absolute; border: solid black 1px; background: white">
+	           <div id="fileInfoName"></div><br>
+	           <div id="fileInfoSize"></div><br>
+	       </div>
 	</div>
       </div>
-    </div>
     <script>
 var progress = document.getElementById('uploadprogress');
 var fileDropArea = document.getElementById('uploadRegion');

@@ -1,4 +1,0 @@
-if ($_FILES["file"]["error"] > 0)
-{
-}else{
-}
