@@ -17,15 +17,19 @@ for ($i = 0; $i < count($_FILES["files"]["name"]); $i++)
     else
     {
 	$guid = uniqid();
+	$result = false;
 	if (isset($_SESSION['userid']))
 	{
-	    move_uploaded_file($_FILES["files"]["tmp_name"][$i], "/home/$_SESSION[userid]/upload/" . $_FILES['files']['name'][$i]); 
+	   $result = move_uploaded_file($_FILES["files"]["tmp_name"][$i], "/home/$_SESSION[userid]/upload/" . $_FILES['files']['name'][$i]); 
 	}
 	else
 	{
-	    move_uploaded_file($_FILES["files"]["tmp_name"][$i], "/var/www/upload/".$guid);
+	    $result = move_uploaded_file($_FILES["files"]["tmp_name"][$i], "/var/www/upload/".$guid);
 	}
-
+	if (!$result)
+	{
+	    echo "Failed to upload file";
+	}
 	//store the guid, file name, type, time stamp, and owner in the database
 	//Print out a direct access link to the file
 

@@ -15,7 +15,9 @@ function InitFileList()
 	    var fileInfoView = document.getElementById("fileInfoView");
 	    var fileInfoName = document.getElementById("fileInfoName");
 	    var fileInfoSize = document.getElementById("fileInfoSize");
-
+	    var fileDownload = document.getElementById("fileDownload");
+	    var fileShare = document.getElementById("fileShare");
+	    
 	    var x=0,y=0;
 	    
 	    x = event.clientX + window.scrollX + 20;
@@ -26,6 +28,7 @@ function InitFileList()
 	    fileInfoView.style.display = "block"; 
 	    fileInfoName.innerHTML = "FileName: " + fileItemInfos[this.id].name;
 	    fileInfoSize.innerHTML = "File Size: " + fileItemInfos[this.id].size;
+	    fileDownload.href="download.php?guid=" + this.id;
 	    return false;
 	};
     }

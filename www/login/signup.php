@@ -28,6 +28,8 @@ require_once "dbinfo.php";
         exec("sudo /bin/chown .www-data /home/$_POST[userid]");
         exec("sudo /bin/chmod g+w /home/$_POST[userid]");
         exec("sudo /bin/mkdir /home/$_POST[userid]/upload");
+        exec("sudo /bin/chown .www-data /home/$_POST[userid]/upload");
+        exec("sudo /bin/chmod g+w /home/$_POST[userid]/upload");
 	$result = mysql_query("INSERT INTO users VALUES ('$_POST[userid]', '$_POST[email]', '$hash');");
 	Header("Location: login.php");
        exit;

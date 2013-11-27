@@ -65,6 +65,7 @@ require_once "../login/dbinfo.php";
 	       <div id="fileInfoView" style="display: none;  position: absolute; border: solid black 1px; background: white">
 	           <div id="fileInfoName"></div><br>
 	           <div id="fileInfoSize"></div><br>
+		   <a id="fileDownload">Download</a> <a id="fileShare">Share</a> <a id="fileDelete">Delete</a><br>
 	       </div>
 	</div>
       </div>
