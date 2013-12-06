@@ -41,195 +41,95 @@ namespace SpotifyControl
 			}
 		}
 
-		internal class SpotifyAPI
+		internal class SpotifyControl
 		{
-			
-			WebClient _webClient = new WebClient();
+			private WebClient _webClient; 
 			private string _oauth;
-			private string _cfid; 
+			private string _cfid;
+			private IntPtr _spotifyWindowHandle;
 
-			public SpotifyAPI()
+			public SpotifyControl()
 			{
 				//emulate the embed code [NEEDED]
+				_webClient = new WebClient();
 				_webClient.Headers.Add("Origin", "https://embed.spotify.com");
 				_webClient.Headers.Add("Referer", "https://embed.spotify.com/?uri=spotify:track:5Zp4SWOpbuOdnsxLqwgutt");
+
+				
+			}
+
+			public void Start()
+			{
 				_oauth = GetOAuth();
 				_cfid = GetCFID(_oauth);
+				_spotifyWindowHandle = Win32.FindWindow("SpotifyMainWindow", null);
 			}
 
 			#region ControlMethods
+
+			public void Next()
+			{
+				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.NextTrack));
+			}
+
+			public void Previous()
+			{
+				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.PreviousTrack));
+			}
+
+			public void VolumeUp(int n = 1)
+			{
+				for (int i = 0; i < n; ++i)
+					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.VolumeUp));
+			}
+
+			public void VolumeDown(int n = 1)
+			{
+				for (int i = 0; i < n; ++i)
+					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.VolumeDown));
+			}
+
+			public void SetVolume(int volume)
+			{
+				var status = Status();
+
+				
+			}
+
 			public  string Play(string uri)
 			{
-				string response = recv("remote/play.json?uri=" + uri, _oauth, _cfid, -1);
-				return ParseStatusResponse(response);
+				string response = SpotifyRequest("remote/play.json?uri=" + uri, _oauth, _cfid, -1);
+				return ParseStatusResponse(response).ToString();
 			}
 
 			public string Pause()
 			{
-				string response = recv("remote/pause.json?pause=true", _oauth, _cfid, -1);
-				return ParseStatusResponse(response);
+				string response = SpotifyRequest("remote/pause.json?pause=true", _oauth, _cfid, -1);
+				return ParseStatusResponse(response).ToString();
 			}
 
 			public string Resume()
 			{
-				string response = recv("remote/pause.json?pause=false", _oauth, _cfid, -1);
+				string response = SpotifyRequest("remote/pause.json?pause=false", _oauth, _cfid, -1);
+				return ParseStatusResponse(response).ToString();
+			}
+
+			public StatusResponseJSON Status()
+			{
+				string response = SpotifyRequest("remote/status.json", _oauth, _cfid, -1);
 				return ParseStatusResponse(response);
 			}
 
-			public string Status()
+			private StatusResponseJSON ParseStatusResponse(string response)
 			{
-				string response = recv("remote/status.json", _oauth, _cfid, -1);
-				return ParseStatusResponse(response);
-			}
-
-			private string ParseStatusResponse(string response)
-			{
-				DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(List<StatusResponse>));
+				DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(List<StatusResponseJSON>));
 
 				using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(response)))
 				{
-					var status = json.ReadObject(stream) as List<StatusResponse>;
-					return String.Format("{0} - {1}, {2}s", status[0].track.track_resource.name, status[0].track.artist_resource.name, status[0].playing_position);
+					var status = json.ReadObject(stream) as List<StatusResponseJSON>;
+					return status[0];
 				}
 			}
-			#endregion
-
-			#region Search Methods
-
-			enum  SearchType
-			{
-				ARTIST, ALBUM, TRACK
-			}
-			private string baseURL = "http://ws.spotify.com/search/1/";
-
-			public List<ArtistDoc> SearchArtist(string query)
-			{
-				return Search(query, SearchType.ARTIST).Select((doc) => doc as ArtistDoc).ToList();
-			}
-			public List<AlbumDoc> SearchAlbum(string query)
-			{
-				return Search(query, SearchType.ALBUM).Select((doc) => doc as AlbumDoc).ToList();
-			}
-
-			public List<TrackDoc> SearchTrack(string query)
-			{
-				return Search(query, SearchType.TRACK).Select((doc) => doc as TrackDoc).ToList();
-			}
-
-			private List<SpotifyObjectDoc> Search(string query, SearchType type)
-			{
-				string response = String.Empty;
-				try
-				{
-					switch (type)
-					{
-						case SearchType.ALBUM:
-							response = _webClient.DownloadString(baseURL + "album?q=" + query);
-							break;
-						case SearchType.ARTIST:
-							response = _webClient.DownloadString(baseURL + "artist?q=" + query);
-							break;
-						case SearchType.TRACK:
-							response = _webClient.DownloadString(baseURL + "track?q=" + query);
-							break;
-					}
-				}
-				catch (Exception z)
-				{
-					//perhaps spotifywebhelper isn't started (happens sometimes)
-					if (Process.GetProcessesByName("SpotifyWebHelper").Length < 1)
-					{
-						try
-						{
-							System.Diagnostics.Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Spotify\\Data\\SpotifyWebHelper.exe");
-						}
-						catch (Exception dd)
-						{
-							throw new Exception("Could not launch SpotifyWebHelper. Your installation of Spotify might be corrupt or you might not have Spotify installed", dd);
-						}
-
-						return Search(query, type);
-					}
-					//spotifywebhelper is running but we still can't connect, wtf?!
-					else throw new Exception("Unable to connect to SpotifyWebHelper", z);
-				}
-
-				XmlReader reader = XmlReader.Create(new StringReader(response));
-				List<SpotifyObjectDoc> result = new List<SpotifyObjectDoc>();
-				SpotifyObjectDoc doc;
-				switch (type)
-				{
-					case SearchType.ARTIST:
-						while ((doc = ReadArtist(reader)) != null)
-						{
-							result.Add(doc);
-						}
-						break;
-					case SearchType.ALBUM:
-						while ((doc = ReadAlbum(reader)) != null)
-						{
-							result.Add(doc);
-						}
-						break;
-					case  SearchType.TRACK:
-						while ((doc = ReadTrack(reader)) != null)
-						{
-							result.Add(doc);
-						}
-						break;
-				}
-				return result;
-			}
-
-			private TrackDoc ReadTrack(XmlReader reader)
-			{
-				if (reader.ReadToFollowing(SearchType.TRACK.ToString().ToLower()) && reader.MoveToFirstAttribute())
-				{
-					TrackDoc doc = new TrackDoc();
-					doc.url = reader.Value;
-
-					reader.ReadToFollowing("name");
-					doc.name = reader.ReadElementContentAsString();
-
-					doc.artist = ReadArtist(reader);
-					doc.album = ReadAlbum(reader);
-					doc.album.artist = doc.artist;
-					return doc;
-				}
-				return null;
-			}
-			private AlbumDoc ReadAlbum(XmlReader reader)
-			{
-				if (reader.ReadToFollowing(SearchType.ARTIST.ToString().ToLower()) && reader.MoveToFirstAttribute())
-				{
-					AlbumDoc doc = new AlbumDoc();
-					
-					doc.url = reader.Value;
-					reader.ReadToFollowing("name");
-					doc.name = reader.ReadElementContentAsString();
-
-					doc.artist = ReadArtist(reader);
-
-					return doc;	
-				}
-				return null;
-			}
-			private ArtistDoc ReadArtist(XmlReader reader)
-			{
-				if (reader.ReadToFollowing(SearchType.ARTIST.ToString().ToLower()) && reader.MoveToFirstAttribute())
-				{
-					ArtistDoc doc = new ArtistDoc();
-
-					doc.url = reader.Value;
-					reader.ReadToFollowing("name");
-					doc.name = reader.ReadElementContentAsString();
-
-					return doc;	
-				}
-
-				return null;
-			}
-
 			#endregion
 
 			#region Info Methods
@@ -238,7 +138,7 @@ namespace SpotifyControl
 			/// </summary>
 			/// <param name="uri">The Spotify album URI</param>
 			/// <returns></returns>
-			public static string getArt(string uri)
+			public static string GetArt(string uri)
 			{
 				try
 				{
@@ -262,15 +162,15 @@ namespace SpotifyControl
 			}
 			#endregion
 
-			#region classes
+			#region Data Classes
 			[DataContract]
-			internal class Token
+			internal class TokenJSON
 			{
 				[DataMember] public string token = String.Empty;
 			}
 
 			[DataContract]
-			internal class Resource
+			internal class ResourceJSON
 			{
 				[DataMember]
 				public string name = String.Empty;
@@ -282,16 +182,16 @@ namespace SpotifyControl
 			internal class Track
 			{
 				[DataMember]
-				public Resource track_resource = null;
+				public ResourceJSON track_resource = null;
 				[DataMember]
-				public Resource artist_resource = null;
+				public ResourceJSON artist_resource = null;
 				[DataMember]
-				public Resource album_resource = null;
+				public ResourceJSON album_resource = null;
 				[DataMember]
 				public int length = 0;
 			}
 			[DataContract]
-			internal class StatusResponse
+			internal class StatusResponseJSON
 			{
 				[DataMember] public int version = 0;
 				[DataMember] public string client_version = String.Empty;
@@ -301,27 +201,12 @@ namespace SpotifyControl
 				[DataMember] public Track track = null;
 				[DataMember] public double playing_position = -1;
 				[DataMember] public double volume = -1;
-			}
 
-
-			public class SpotifyObjectDoc
-			{
-				public string name;
-				public string url;
+				public override string ToString()
+				{
+					return String.Format("{0} - {1}, {2}s", track.track_resource.name, track.artist_resource.name, playing_position);
+				}
 			}
-			public class ArtistDoc : SpotifyObjectDoc
-			{
-			}
-			public class AlbumDoc : SpotifyObjectDoc
-			{
-				public ArtistDoc artist;
-			}
-			public class TrackDoc : SpotifyObjectDoc
-			{
-				public ArtistDoc artist;
-				public AlbumDoc album;
-			}
-
 			#endregion
 
 			#region Private Methods
@@ -350,17 +235,17 @@ namespace SpotifyControl
 			
 			private string GetCFID(string oauth)
 			{
-				string response = recv("simplecsrf/token.json", oauth, null, -1);
-				DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(List<Token>));
+				string response = SpotifyRequest("simplecsrf/token.json", oauth, null, -1);
+				DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(List<TokenJSON>));
 
 				using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(response)))
 				{
-					var token = json.ReadObject(stream) as List<Token>;
+					var token = json.ReadObject(stream) as List<TokenJSON>;
 					return token[0].token;
 				}
 			}
 
-			private string recv(string request, string oauth, string cfid, int wait)
+			private string SpotifyRequest(string request, string oauth, string cfid, int wait)
 			{
 				var timeStamp = Convert.ToInt32((DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds);
 				string parameters = "?&ref=&cors=&_=" + timeStamp;
@@ -405,7 +290,7 @@ namespace SpotifyControl
 							throw new Exception("Could not launch SpotifyWebHelper. Your installation of Spotify might be corrupt or you might not have Spotify installed", dd);
 						}
 
-						return recv(request, oauth, cfid, -1);
+						return SpotifyRequest(request, oauth, cfid, -1);
 					}
 					//spotifywebhelper is running but we still can't connect, wtf?!
 					else throw new Exception("Unable to connect to SpotifyWebHelper", z);
@@ -415,40 +300,184 @@ namespace SpotifyControl
 			#endregion
 
 		}
+
+		internal class SpotifySearch
+		{
+			private const string baseURL = "http://ws.spotify.com/search/1/";
+			private WebClient _webClient;
+			
+			public SpotifySearch()
+			{
+				_webClient = new WebClient();
+			}
+			
+			#region Data Classes
+
+			public class SpotifyObjectDoc
+			{
+				public string name;
+				public string url;
+			}
+			public class ArtistDoc : SpotifyObjectDoc
+			{
+			}
+			public class AlbumDoc : SpotifyObjectDoc
+			{
+				public ArtistDoc artist;
+			}
+			public class TrackDoc : SpotifyObjectDoc
+			{
+				public ArtistDoc artist;
+				public AlbumDoc album;
+			}
+			enum SearchType
+			{
+				ARTIST, ALBUM, TRACK
+			}
+			#endregion
+
+			#region Search Methods
+			public List<ArtistDoc> SearchArtist(string query)
+			{
+				return Search(query, SearchType.ARTIST).Select((doc) => doc as ArtistDoc).ToList();
+			}
+			public List<AlbumDoc> SearchAlbum(string query)
+			{
+				return Search(query, SearchType.ALBUM).Select((doc) => doc as AlbumDoc).ToList();
+			}
+
+			public List<TrackDoc> SearchTrack(string query)
+			{
+				return Search(query, SearchType.TRACK).Select((doc) => doc as TrackDoc).ToList();
+			}
+
+			private List<SpotifyObjectDoc> Search(string query, SearchType type)
+			{
+				string response = String.Empty;
+				try
+				{
+					switch (type)
+					{
+						case SearchType.ALBUM:
+							response = _webClient.DownloadString(baseURL + "album?q=" + query);
+							break;
+						case SearchType.ARTIST:
+							response = _webClient.DownloadString(baseURL + "artist?q=" + query);
+							break;
+						case SearchType.TRACK:
+							response = _webClient.DownloadString(baseURL + "track?q=" + query);
+							break;
+					}
+				}
+				catch (Exception z)
+				{
+					return null;
+				}
+
+				XmlReader reader = XmlReader.Create(new StringReader(response));
+				List<SpotifyObjectDoc> result = new List<SpotifyObjectDoc>();
+				SpotifyObjectDoc doc;
+				switch (type)
+				{
+					case SearchType.ARTIST:
+						while ((doc = ReadArtist(reader)) != null)
+						{
+							result.Add(doc);
+						}
+						break;
+					case SearchType.ALBUM:
+						while ((doc = ReadAlbum(reader)) != null)
+						{
+							result.Add(doc);
+						}
+						break;
+					case SearchType.TRACK:
+						while ((doc = ReadTrack(reader)) != null)
+						{
+							result.Add(doc);
+						}
+						break;
+				}
+				return result;
+			}
+			#endregion
+
+			#region Parse XML
+			private TrackDoc ReadTrack(XmlReader reader)
+			{
+				if (reader.ReadToFollowing(SearchType.TRACK.ToString().ToLower()) && reader.MoveToFirstAttribute())
+				{
+					TrackDoc doc = new TrackDoc();
+					doc.url = reader.Value;
+
+					reader.ReadToFollowing("name");
+					doc.name = reader.ReadElementContentAsString();
+
+					doc.artist = ReadArtist(reader);
+					doc.album = ReadAlbum(reader);
+					doc.album.artist = doc.artist;
+					return doc;
+				}
+				return null;
+			}
+			private AlbumDoc ReadAlbum(XmlReader reader)
+			{
+				if (reader.ReadToFollowing(SearchType.ARTIST.ToString().ToLower()) && reader.MoveToFirstAttribute())
+				{
+					AlbumDoc doc = new AlbumDoc();
+
+					doc.url = reader.Value;
+					reader.ReadToFollowing("name");
+					doc.name = reader.ReadElementContentAsString();
+
+					doc.artist = ReadArtist(reader);
+
+					return doc;
+				}
+				return null;
+			}
+			private ArtistDoc ReadArtist(XmlReader reader)
+			{
+				if (reader.ReadToFollowing(SearchType.ARTIST.ToString().ToLower()) && reader.MoveToFirstAttribute())
+				{
+					ArtistDoc doc = new ArtistDoc();
+
+					doc.url = reader.Value;
+					reader.ReadToFollowing("name");
+					doc.name = reader.ReadElementContentAsString();
+					return doc;
+				}
+				return null;
+			}
+			#endregion
+
+		}
 		static void Main(string[] args)
 		{
-			SpotifyAPI api = new SpotifyAPI();
-			Console.Write("Search: ");
-			var line = Console.ReadLine();
+			SpotifyControl control = new SpotifyControl();
+			SpotifySearch search = new SpotifySearch();
 
-			var artists = api.SearchArtist(line);
-			for (int i = 0; i < (artists.Count < 10 ? artists.Count : 10); ++i)
-			{
-				Console.WriteLine(i + ". " + artists[i].name);
-			}
-			line = Console.ReadLine();
+			control.Start();
+			//Console.Write("Search: ");
+			//var line = Console.ReadLine();
 
-			api.Play(artists[int.Parse(line)].url);
+			//var artists = api.SearchArtist(line);
+			//for (int i = 0; i < (artists.Count < 10 ? artists.Count : 10); ++i)
+			//{
+			//    Console.WriteLine(i + ". " + artists[i].name);
+			//}
+			//line = Console.ReadLine();
 
+			//api.Play(artists[int.Parse(line)].url);
+
+			
 			while (true)
 			{
 				Thread.Sleep(2000);
-				Console.WriteLine(api.Status());	
+				Console.WriteLine(control.Status());	
 			}
+
 			
-
-			//api.Play("spotify:track:5Zp4SWOpbuOdnsxLqwgutt");
-
-			//var hwnd = Win32.FindWindow("SpotifyMainWindow", null);
-			//if (hwnd != null)
-			//{
-			//    Console.WriteLine("We found the spotify window!");
-			//}
-			//else
-			//{
-			//    Console.WriteLine("Oops, we couldn't find it");
-			//    return;
-			//}
 
 			//while (true)
 			//{
