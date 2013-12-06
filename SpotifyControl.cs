@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -15,6 +16,8 @@ namespace SpotifyControl
 {
 	class Program
 	{
+
+
 		internal class SpotifyControl
 		{
 			private WebClient _webClient; 
@@ -46,24 +49,34 @@ namespace SpotifyControl
 
 			public void Next()
 			{
-				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.NextTrack));
+				if (_spotifyWindowHandle != null)
+					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.NextTrack));
 			}
 
 			public void Previous()
 			{
-				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.PreviousTrack));
+				if (_spotifyWindowHandle != null)
+					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.PreviousTrack));
 			}
 
 			public void VolumeUp(int n = 1)
 			{
-				for (int i = 0; i < n; ++i)
-					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.VolumeUp));
+				if (_spotifyWindowHandle != null)
+				{
+					for (int i = 0; i < n; ++i)
+						Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.VolumeUp));	
+				}
 			}
 
 			public void VolumeDown(int n = 1)
 			{
-				for (int i = 0; i < n; ++i)
-					Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero, new IntPtr((long)SpotifyAction.VolumeDown));
+				if (_spotifyWindowHandle != null)
+				{
+
+					for (int i = 0; i < n; ++i)
+						Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero,
+						                  new IntPtr((long) SpotifyAction.VolumeDown));
+				}
 			}
 
 			public void SetVolume(int volume)
@@ -100,9 +113,13 @@ namespace SpotifyControl
 				return ParseStatusResponse(response).ToString();
 			}
 
+			public string GetJSONStatus()
+			{
+				return SpotifyRequest("remote/status.json", _oauth, _cfid, -1);
+			}
 			public StatusResponseJSON Status()
 			{
-				string response = SpotifyRequest("remote/status.json", _oauth, _cfid, -1);
+				string response = GetJSONStatus();
 				return ParseStatusResponse(response);
 			}
 
@@ -197,17 +214,20 @@ namespace SpotifyControl
 
 			public enum SpotifyAction : long
 			{
-				PlayPause = 917504,
+				Play = 917504,
+				Pause = 917504,
 				Mute = 524288,
 				VolumeDown = 589824,
 				VolumeUp = 655360,
 				Stop = 851968,
 				PreviousTrack = 786432,
-				NextTrack = 720896
+				NextTrack = 720896,
+
 			}
 
 			internal class Win32
 			{
+				
 				[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
 				internal static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
@@ -470,30 +490,46 @@ namespace SpotifyControl
 		static void Main(string[] args)
 		{
 			SpotifyControl control = new SpotifyControl();
-			SpotifySearch search = new SpotifySearch();
-
 			control.Start();
-			//Console.Write("Search: ");
-			//var line = Console.ReadLine();
 
-			//var artists = api.SearchArtist(line);
-			//for (int i = 0; i < (artists.Count < 10 ? artists.Count : 10); ++i)
-			//{
-			//    Console.WriteLine(i + ". " + artists[i].name);
-			//}
-			//line = Console.ReadLine();
+			var ip = new IPAddress(Encoding.Default.GetBytes("127.0.0.1"));
+			TcpListener server = new TcpListener(ip, 8012);
+			server.Start();
 
-			//api.Play(artists[int.Parse(line)].url);
+			var client = server.AcceptSocket();
 
-			
+			byte [] data = new byte[1000];
 			while (true)
 			{
-				Thread.Sleep(2000);
-				Console.WriteLine(control.Status());	
+				client.Receive(data);
+				
+				//data should be json... parse the json...
+
+				SpotifyControl.SpotifyAction command;
+				SpotifyControl.SpotifyAction.TryParse(System.Text.Encoding.Default.GetString(data), out command);
+				
+				switch (command)
+				{
+					case SpotifyControl.SpotifyAction.VolumeUp:
+						control.VolumeUp();
+						break;
+					case SpotifyControl.SpotifyAction.VolumeDown:
+						control.VolumeDown();
+						break;
+					case SpotifyControl.SpotifyAction.NextTrack:
+						control.Next();
+						break;
+					case SpotifyControl.SpotifyAction.PreviousTrack:
+						control.Previous();
+						break;
+					case SpotifyControl.SpotifyAction.Play:
+						control.Play("");
+						break;
+				}
+
+				Console.WriteLine(control.Status());
 			}
-
 			
-
 			//while (true)
 			//{
 			//    var line = Console.ReadLine();
