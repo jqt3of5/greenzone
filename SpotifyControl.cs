@@ -15,32 +15,6 @@ namespace SpotifyControl
 {
 	class Program
 	{
-
-		public enum SpotifyAction : long
-		{
-			PlayPause = 917504,
-			Mute = 524288,
-			VolumeDown = 589824,
-			VolumeUp = 655360,
-			Stop = 851968,
-			PreviousTrack = 786432,
-			NextTrack = 720896
-		}
-
-		internal class Win32
-		{
-			[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
-			internal static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-			[DllImport("user32.dll", EntryPoint = "FindWindow")]
-			internal static extern IntPtr FindWindow(string lp1, string lp2);
-
-			internal class Constants
-			{
-				internal const uint WM_APPCOMMAND = 0x0319;
-			}
-		}
-
 		internal class SpotifyControl
 		{
 			private WebClient _webClient; 
@@ -54,8 +28,6 @@ namespace SpotifyControl
 				_webClient = new WebClient();
 				_webClient.Headers.Add("Origin", "https://embed.spotify.com");
 				_webClient.Headers.Add("Referer", "https://embed.spotify.com/?uri=spotify:track:5Zp4SWOpbuOdnsxLqwgutt");
-
-				
 			}
 
 			public void Start()
@@ -63,6 +35,11 @@ namespace SpotifyControl
 				_oauth = GetOAuth();
 				_cfid = GetCFID(_oauth);
 				_spotifyWindowHandle = Win32.FindWindow("SpotifyMainWindow", null);
+
+				if (_spotifyWindowHandle == null)
+				{
+					throw new Exception("Could not find the Spotify window. Is Spotify running?");
+				}
 			}
 
 			#region ControlMethods
@@ -93,7 +70,16 @@ namespace SpotifyControl
 			{
 				var status = Status();
 
-				
+				int diff =(int)(volume - status.volume*100);
+
+				if (diff > 0)
+				{
+					VolumeUp(diff/5); // each volume tick is 5 percent TODO: CHECK if that's true!
+				}
+				else
+				{
+					VolumeDown(diff/5);
+				}
 			}
 
 			public  string Play(string uri)
@@ -162,7 +148,7 @@ namespace SpotifyControl
 			}
 			#endregion
 
-			#region Data Classes
+			#region Internal Classes
 			[DataContract]
 			internal class TokenJSON
 			{
@@ -207,6 +193,33 @@ namespace SpotifyControl
 					return String.Format("{0} - {1}, {2}s", track.track_resource.name, track.artist_resource.name, playing_position);
 				}
 			}
+
+
+			public enum SpotifyAction : long
+			{
+				PlayPause = 917504,
+				Mute = 524288,
+				VolumeDown = 589824,
+				VolumeUp = 655360,
+				Stop = 851968,
+				PreviousTrack = 786432,
+				NextTrack = 720896
+			}
+
+			internal class Win32
+			{
+				[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+				internal static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+				[DllImport("user32.dll", EntryPoint = "FindWindow")]
+				internal static extern IntPtr FindWindow(string lp1, string lp2);
+
+				internal class Constants
+				{
+					internal const uint WM_APPCOMMAND = 0x0319;
+				}
+			}
+
 			#endregion
 
 			#region Private Methods
@@ -452,6 +465,8 @@ namespace SpotifyControl
 			#endregion
 
 		}
+
+
 		static void Main(string[] args)
 		{
 			SpotifyControl control = new SpotifyControl();
