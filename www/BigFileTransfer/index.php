@@ -80,36 +80,38 @@ function readFiles(files)
 	progress.value = progress.innerHTML = 100;
     };
     
-    xhr.upload.onprogress = function(event){
-	if (event.lengthComputable)
-	{
-	    var complete = (event.loaded / event.total * 100 | 0);
-	    progress.value = progress.innerHTML = complete;
-	}
+    xhr.upload.onprogress = function(event)
+    {
+					if (event.lengthComputable)
+					{
+	    			var complete = (event.loaded / event.total * 100 | 0);
+	    			progress.value = progress.innerHTML = complete;
+					}
     };
 
-    xhr.onreadystatechange = function(event){
-	if (event.target.readyState === 4 && event.target.status === 200)
-	{
-	    document.getElementById("filesTable").innerHTML += event.target.responseText;
-	}
+    xhr.onreadystatechange = function(event)
+    {
+				if (event.target.readyState === 4 && event.target.status === 200)
+				{
+				    document.getElementById("filesTable").innerHTML += event.target.responseText;
+				}
     };
     var formData = new FormData();
     for (var i = 0; i < files.length; i++)
     {
-	formData.append('files[]', files[i]);
+						formData.append('files[]', files[i]);
     }
     xhr.send(formData);
 }
 
-fileDropArea.ondragover = function(e){
-    return false;
-};
-
-fileDropArea.ondrop = function(e){
-    e.preventDefault();
-    readFiles(e.dataTransfer.files);
-};
+		fileDropArea.ondragover = function(e){
+		    return false;
+		};
+		
+		fileDropArea.ondrop = function(e){
+		    e.preventDefault();
+		    readFiles(e.dataTransfer.files);
+		};
 
     </script>
   </body>
