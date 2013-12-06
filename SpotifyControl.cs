@@ -95,6 +95,10 @@ namespace SpotifyControl
 				}
 			}
 
+			public void Mute()
+			{
+				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero,new IntPtr((long)SpotifyAction.Mute));
+			}
 			public  string Play(string uri)
 			{
 				string response = SpotifyRequest("remote/play.json?uri=" + uri, _oauth, _cfid, -1);
@@ -113,10 +117,16 @@ namespace SpotifyControl
 				return ParseStatusResponse(response).ToString();
 			}
 
+			public void Stop()
+			{
+				Win32.SendMessage(_spotifyWindowHandle, Win32.Constants.WM_APPCOMMAND, IntPtr.Zero,new IntPtr((long)SpotifyAction.Stop));
+			}
+	
 			public string GetJSONStatus()
 			{
 				return SpotifyRequest("remote/status.json", _oauth, _cfid, -1);
 			}
+			
 			public StatusResponseJSON Status()
 			{
 				string response = GetJSONStatus();
@@ -219,10 +229,10 @@ namespace SpotifyControl
 				Mute = 524288,
 				VolumeDown = 589824,
 				VolumeUp = 655360,
+				SetVolume,
 				Stop = 851968,
 				PreviousTrack = 786432,
 				NextTrack = 720896,
-
 			}
 
 			internal class Win32
@@ -486,13 +496,20 @@ namespace SpotifyControl
 
 		}
 
+		[DataContract]
+		internal class SpotifyCommandJSON
+		{
+			[DataMember] public string command;
+			[DataMember] public string uri;
+			[DataMember] public int volume;
+		}
 
 		static void Main(string[] args)
 		{
 			SpotifyControl control = new SpotifyControl();
 			control.Start();
 
-			var ip = new IPAddress(Encoding.Default.GetBytes("127.0.0.1"));
+			var ip = IPAddress.Parse("127.0.0.1");
 			TcpListener server = new TcpListener(ip, 8012);
 			server.Start();
 
@@ -502,32 +519,44 @@ namespace SpotifyControl
 			while (true)
 			{
 				client.Receive(data);
-				
-				//data should be json... parse the json...
+				var jsonString = Encoding.Default.GetString(data);
 
-				SpotifyControl.SpotifyAction command;
-				SpotifyControl.SpotifyAction.TryParse(System.Text.Encoding.Default.GetString(data), out command);
-				
-				switch (command)
+				var jsonDeserializer = new DataContractJsonSerializer(typeof(List<SpotifyCommandJSON>));
+
+				using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonString)))
 				{
-					case SpotifyControl.SpotifyAction.VolumeUp:
-						control.VolumeUp();
-						break;
-					case SpotifyControl.SpotifyAction.VolumeDown:
-						control.VolumeDown();
-						break;
-					case SpotifyControl.SpotifyAction.NextTrack:
-						control.Next();
-						break;
-					case SpotifyControl.SpotifyAction.PreviousTrack:
-						control.Previous();
-						break;
-					case SpotifyControl.SpotifyAction.Play:
-						control.Play("");
-						break;
-				}
+					var spotifyCommand = jsonDeserializer.ReadObject(stream) as List<SpotifyCommandJSON>;
 
-				Console.WriteLine(control.Status());
+					SpotifyControl.SpotifyAction command;
+					SpotifyControl.SpotifyAction.TryParse(spotifyCommand[0].command, out command);
+
+					switch (command)
+					{
+						case SpotifyControl.SpotifyAction.VolumeUp:
+							control.VolumeUp();
+							break;
+						case SpotifyControl.SpotifyAction.VolumeDown:
+							control.VolumeDown();
+							break;
+						case SpotifyControl.SpotifyAction.Stop:
+							control.Stop();
+							break;
+						case SpotifyControl.SpotifyAction.SetVolume:
+							control.SetVolume(spotifyCommand[0].volume);
+							break;
+						case SpotifyControl.SpotifyAction.NextTrack:
+							control.Next();
+							break;
+						case SpotifyControl.SpotifyAction.PreviousTrack:
+							control.Previous();
+							break;
+						case SpotifyControl.SpotifyAction.Play:
+							control.Play(spotifyCommand[0].uri);
+							break;
+					}
+
+					Console.WriteLine(control.Status());	
+				}
 			}
 			
 			//while (true)
