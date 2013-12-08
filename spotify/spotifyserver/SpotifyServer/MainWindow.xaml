@@ -1,0 +1,9 @@
+﻿<Window x:Class="SpotifyServer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:UI="clr-namespace:SpotifyServer.UI"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <UI:StartAndStatus x:Name="_startAndStatus"></UI:StartAndStatus>
+    </Grid>
+</Window>
