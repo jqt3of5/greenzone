@@ -142,7 +142,7 @@ namespace SpotifyServer
                 return;
             }
         }
-
+#region INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnChanged(String propertyName = "")
@@ -152,5 +152,6 @@ namespace SpotifyServer
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+        #endregion
     }
 }
