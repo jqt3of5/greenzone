@@ -4,8 +4,14 @@
 require_once "dbinfo.php";
    if (!empty($_POST['email']) &&
        !empty($_POST['userid']) &&
-       !empty($_POST['password']))
+       !empty($_POST['password']) &&
+       !empty($_POST['retypedPassword']))
      {
+        if ($_POST['password'] != $_POST['retypedPassword'])
+        {
+            Header("Location: signup.php?error=Passwords don\'t match");
+            exit;
+        }
 	$con = mysql_connect($dbhost, $dbuser, $dbpwd);
 	
 	if (!$con)
@@ -15,7 +21,7 @@ require_once "dbinfo.php";
 		
 	mysql_select_db($db, $con);
 
-	$result = mysql_query("SELECT userid FROM users WHERE userid='$_POST[userid]'");
+	$result = mysql_query("SELECT user FROM users WHERE user='$_POST[userid]'");
 	$count = mysql_num_rows($result);
 	//This use already exists
 	if ($count > 0)
@@ -24,13 +30,13 @@ require_once "dbinfo.php";
 	    exit;
 	  }
 	$hash = crypt($_POST['password']);
-        exec("sudo /usr/sbin/useradd -s '/bin/false' -m -p '$hash' $_POST[userid]");
-        exec("sudo /bin/chown .www-data /home/$_POST[userid]");
-        exec("sudo /bin/chmod g+w /home/$_POST[userid]");
-        exec("sudo /bin/mkdir /home/$_POST[userid]/upload");
-        exec("sudo /bin/chown .www-data /home/$_POST[userid]/upload");
-        exec("sudo /bin/chmod g+w /home/$_POST[userid]/upload");
-	$result = mysql_query("INSERT INTO users VALUES ('$_POST[userid]', '$_POST[email]', '$hash');");
+        //exec("sudo /usr/sbin/useradd -s '/bin/false' -m -p '$hash' $_POST[userid]");
+        //exec("sudo /bin/chown .www-data /home/$_POST[userid]");
+        //exec("sudo /bin/chmod g+w /home/$_POST[userid]");
+        //exec("sudo /bin/mkdir /home/$_POST[userid]/upload");
+        //exec("sudo /bin/chown .www-data /home/$_POST[userid]/upload");
+        //exec("sudo /bin/chmod g+w /home/$_POST[userid]/upload");
+	$result = mysql_query("INSERT INTO users VALUES ('$_POST[userid]', '$hash', '', '$_POST[email]');");
 	Header("Location: login.php");
        exit;
      }
@@ -42,6 +48,7 @@ require_once "dbinfo.php";
 	  Email: <input type='text' name='email'><br>
 	  User Name: <input type='text' name='userid'><br>
 	  Password: <input type='password' name='password'><br>
+	  Retype Password: <input type='password' name='retypedPassword'><br>
 	  <input type='submit'>
         </form>
     </center>
