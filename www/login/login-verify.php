@@ -8,7 +8,7 @@
 
 require_once "dbinfo.php";
 
-   if (!empty($_POST['userid']) && !empty($_POST['password']))
+   if (!empty($_POST['username']) && !empty($_POST['password']))
    {		//connect and check the db for this user
 	$con = mysql_connect($dbhost, $dbuser, $dbpwd);
 	if (! $con)
@@ -18,14 +18,21 @@ require_once "dbinfo.php";
 		
 	mysql_select_db($db, $con);
 	
-	$result = mysql_query("SELECT user, email, password FROM users WHERE user='$_POST[userid]';");
+	$result = mysql_query("SELECT username, password FROM users WHERE username='$_POST[username]';");
+	
 	
 	$row = mysql_fetch_assoc($result);
 	$hash = crypt($_POST['password'], $row['password']);		
 			
 	if ($hash == $row['password']){
-	  $_SESSION['userid'] = $row['user'];
-	  $_SESSION['email'] = $row['email'];
+	  $_SESSION['username'] = $row['username'];
+
+	  $result = mysql_query("SELECT name FROM grouplist NATURAL JOIN groups WHERE username='$_POST[username]';");	
+	  $_SESSION['groups'] = array();
+	  while ($groupRow = mysql_fetch_array($result))
+	  {	  
+	      $_SESSION['groups'][] = $groupRow[0];
+	  }
 	  $url = "/index.php";
 	}else {
 	  $url = "/login/login.php?error='Wrong user or password'";

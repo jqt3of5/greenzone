@@ -2,8 +2,7 @@
 <body>
 <?php
 require_once "dbinfo.php";
-   if (!empty($_POST['email']) &&
-       !empty($_POST['userid']) &&
+   if (!empty($_POST['username']) &&
        !empty($_POST['password']) &&
        !empty($_POST['retypedPassword']))
      {
@@ -21,7 +20,7 @@ require_once "dbinfo.php";
 		
 	mysql_select_db($db, $con);
 
-	$result = mysql_query("SELECT user FROM users WHERE user='$_POST[userid]'");
+	$result = mysql_query("SELECT username FROM users WHERE username='$_POST[username]'");
 	$count = mysql_num_rows($result);
 	//This use already exists
 	if ($count > 0)
@@ -29,14 +28,9 @@ require_once "dbinfo.php";
 	    Header("Location: signup.php?error=User already exists.");
 	    exit;
 	  }
-	$hash = crypt($_POST['password']);
-        //exec("sudo /usr/sbin/useradd -s '/bin/false' -m -p '$hash' $_POST[userid]");
-        //exec("sudo /bin/chown .www-data /home/$_POST[userid]");
-        //exec("sudo /bin/chmod g+w /home/$_POST[userid]");
-        //exec("sudo /bin/mkdir /home/$_POST[userid]/upload");
-        //exec("sudo /bin/chown .www-data /home/$_POST[userid]/upload");
-        //exec("sudo /bin/chmod g+w /home/$_POST[userid]/upload");
-	$result = mysql_query("INSERT INTO users VALUES ('$_POST[userid]', '$hash', '', '$_POST[email]');");
+        mysql_query("INSERT INTO users (username,gecos,homedir,password)
+                     VALUES ('$_POST[username]', 'No Name', '/home/$_POST[username]', ENCRYPT('$_POST[password]'))");
+        mysql_query("INSERT INTO groups (name) VALUES ('$_POST[username]')");
 	Header("Location: login.php");
        exit;
      }
@@ -46,7 +40,7 @@ require_once "dbinfo.php";
         <h1> Please fill out all information</h1>
         <form action='signup.php' method='POST'>
 	  Email: <input type='text' name='email'><br>
-	  User Name: <input type='text' name='userid'><br>
+	  User Name: <input type='text' name='username'><br>
 	  Password: <input type='password' name='password'><br>
 	  Retype Password: <input type='password' name='retypedPassword'><br>
 	  <input type='submit'>

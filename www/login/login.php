@@ -6,7 +6,7 @@
     <h1>You made it to the login!</h1><br>
     <?php if (isset($_GET['error'])){ echo $_GET['error'] . '<br>'; } ?>
     <form action='login-verify.php' method = 'post'>
-         User Name: <input type='text' name='userid'><br>
+         User Name: <input type='text' name='username'><br>
          Password: <input type='password' name='password'><br>
          <input type='submit' value='Submit'>
     </form>

@@ -1,6 +1,6 @@
 <?php
 $dbhost = "localhost";
-$dbuser = "web";
+$dbuser = "root";
 $dbpwd = "diogee";
-$db = "greenzone";
+$db = "auth";
 ?>

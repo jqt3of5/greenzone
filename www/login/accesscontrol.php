@@ -25,7 +25,7 @@ if (isset($_POST['ticket'])
 		
 	mysql_select_db($db, $con);
 	
-      $result = mysql_query("SELECT user, email, password FROM users WHERE user='$_POST[userid]';");
+      $result = mysql_query("SELECT username, password FROM users WHERE username='$_POST[username]';");
       $row = mysql_fetch_assoc($result);
       
       //concat user+expiration+passwordHash. Basically keyed hash
@@ -35,12 +35,11 @@ if (isset($_POST['ticket'])
       //if same, fillout session
       if ($ticketHash == hash($prehash))
       {
-	$_SESSION['email'] = $row['email'];
-	$_SESSION['userid'] = $user;	
+	$_SESSION['username'] = $user;	
       }
   }
-if (!isset($_SESSION['email']) || !isset($_SESSION['userid'])){
-	Header("Location: /login/login.php?error=not logged in");
+if (!isset($_SESSION['username'])){
+	Header("Location: /login/login.php?error=Not logged in.");
 	exit;
 }
 ?>

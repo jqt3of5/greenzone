@@ -23,9 +23,9 @@ require_once "../login/dbinfo.php";
     <div style="text-align: center; background: grey">
       <div id='header'  style="text-align: right;"> 
 	<?php
-	   if (isset($_SESSION['userid']))
+	   if (isset($_SESSION['username']))
 	   {
-	       echo "<a href='/login/account.php' id='accountButton' class='button'>$_SESSION[userid]</a> ";
+	       echo "<a href='/login/account.php' id='accountButton' class='button'>$_SESSION[username]</a> ";
 	       echo "<a href='/login/logout.php' id='signoutButton' class='button'>Logout</a> ";
 	   } else {
 	       echo "<a href='/login/signup.php' id='signUpButton' class='button'>Sign Up</a> ";
