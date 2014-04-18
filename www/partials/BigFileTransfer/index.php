@@ -45,17 +45,20 @@ require_once "../login/dbinfo.php";
       <div id="fileListDiv" style="background: darkgrey;">
       	    <?php
 
-	       if (isset($_SESSION['userid']))
+	       if (isset($_SESSION['username']))
 	       {
 		   $con = mysql_connect($dbhost, $dbuser, $dbpwd) or die("Connection Failed");
 		   mysql_select_db($db, $con);
-	       
-		   $result = mysql_query("SELECT guid, fileName FROM files WHERE userid='$_SESSION[userid]'");
+
+		   $result = mysql_query("SELECT uid FROM users WHERE username='$_SESSION[username]'");
+		   $uid = mysql_fetch_assoc($result)['uid'];
+
+		   $result = mysql_query("SELECT guid, filename FROM bigFilesTable WHERE uid='$uid'");
 		   $fileItemJson = "{";
 		   while ($row = mysql_fetch_array($result))
 		   {
-			$fileItemJson = $fileItemJson . "\"$row[guid]\":{name:\"$row[fileName]\", size:0, date: \"1/1/1970\"},";
-			echo "<a class='fileItem' id='$row[guid]' href='/BigFileTransfer/download.php?guid=$row[guid]'>$row[fileName]</a><br>\n";
+			$fileItemJson = $fileItemJson . "\"$row[guid]\":{name:\"$row[filename]\", size:0, date: \"1/1/1970\"},";
+			echo "<a class='fileItem' id='$row[guid]' href='/BigFileTransfer/download.php?guid=$row[guid]'>$row[filename]</a><br>\n";
 		   }
 		   $fileItemJson = $fileItemJson . "}";
 		   mysql_close($con); 
@@ -93,7 +96,7 @@ function readFiles(files)
     {
 				if (event.target.readyState === 4 && event.target.status === 200)
 				{
-				    document.getElementById("filesTable").innerHTML += event.target.responseText;
+				    document.getElementById("fileListDiv").innerHTML += event.target.responseText;
 				}
     };
     var formData = new FormData();
