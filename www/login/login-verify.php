@@ -11,7 +11,7 @@ require_once "dbinfo.php";
    if (!empty($_POST['username']) && !empty($_POST['password']))
    {		//connect and check the db for this user
 	$con = mysql_connect($dbhost, $dbuser, $dbpwd);
-	if (! $con)
+	if (!$con)
 	  {
 	    die ('Could not connect: ' . mysql_error());
 	  }
@@ -25,6 +25,7 @@ require_once "dbinfo.php";
 	$hash = crypt($_POST['password'], $row['password']);		
 			
 	if ($hash == $row['password']){
+		  //if (mysql_fetch_array($result).length > 0){
 	  $_SESSION['username'] = $row['username'];
 
 	  $result = mysql_query("SELECT name FROM grouplist NATURAL JOIN groups WHERE username='$_POST[username]';");	

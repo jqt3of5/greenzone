@@ -6,7 +6,7 @@ if (!session_start())
     echo "Fail!";
     exit;
   }
-if (isset($_POST['ticket'])
+if (isset($_POST['ticket']))
   {
       $ticket = base64_decode($_POST['ticket']);
       //decode ticket into: user, expiration, ticket hash
@@ -39,7 +39,7 @@ if (isset($_POST['ticket'])
       }
   }
 if (!isset($_SESSION['username'])){
-	Header("Location: /login/login.php?error=Not logged in.");
-	exit;
+  	Header("Location: /login/login.php?error=Not logged in.");
+  	exit;
 }
 ?>
