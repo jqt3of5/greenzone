@@ -1,0 +1,37 @@
+#fileView{
+    width:95%;
+    height:80%;
+    display:none;
+    border-style:solid;
+    border-width: 1px;
+}
+.main{
+    width:100%;
+}
+.fileItem:hover{
+    background-color: #cccccc;
+}
+.fileItem:active{
+    background-color: #999999;
+}
+.deleteColumn{
+    text-align: center;
+}
+.deleteColumn:hover{
+    background-color: #9999bb;
+}
+.fileTypeImageColumn{
+    width: 20px;
+    height: 25px;
+}
+.nameColumn{
+    width:85%;
+}
+
+.sizeColumn{
+
+}
+
+.deleteColumn{
+
+}

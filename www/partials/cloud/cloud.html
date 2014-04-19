@@ -1,0 +1,44 @@
+<link rel="stylesheet" href="css/cloud.css">
+<div id="cloudHeader">
+  <h2>Cloud Services</h2>
+  <hr>
+</div>
+  <div id="fileView">
+    
+  </div>
+
+  <table class="main" ng-controller="CloudController">
+    <tr>
+      <table class="main">
+	<tr>
+	  <td>
+	  </td>
+	  <td>
+	    Name
+	  </td>
+	  <td>
+	    Size
+	  </td>
+	  <td>
+	  </td>
+	</tr>
+	<tr class="fileItem" ng-repeat="file in files" >
+	  <td class="fileTypeImageColumn" ng-click="downloadFile(file.guid)">
+	    <img class="fileTypeImageColumn" ng-src="{{fileTypeToImage(file.type)}}"></img>
+	  </td>
+
+	  <td class="nameColumn" ng-click="downloadFile(file.guid)">
+	    {{file.filename}}
+	  </td>
+	  <td class="sizeColumn" ng-click="downloadFile(file.guid)">
+	    {{file.size}}
+	  </td>
+	  <td class="deleteColumn" ng-click="deleteFile(file.guid)">
+	    Delete
+	  </td>	
+	</tr>
+      </table>
+
+    </tr>
+  </table>
+</div>

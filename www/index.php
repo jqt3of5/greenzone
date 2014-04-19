@@ -21,13 +21,8 @@
 			</td>
 			<td id="rightHeader">
       <?php 
-      if (isset($_SESSION['username']))
-	{
 	  echo "<a href='login/login.php'>$_SESSION[username]</a> | <a href='login/logout.php'>Sign Out</a>";
-	}else{
-	echo "<a href='login/login.php'>Login</a> | <a href='login/signUp.php'>Sign Up</a>";
-      }
-?>
+      ?>
 	
 			</td>
 		</tr>
@@ -38,8 +33,9 @@
 				<div class="menuItem" ng-click="navigateToSubTab(item.routeArg)" ng-repeat="item in menuItems">{{item.header}}</div>
 			</td>
 			
-			<td>
-				<div ng-view id="content"></div>
+			<td ng-view id="content">
+			</td>
+			<td id="rightMargin">
 			</td>
 		</tr>
 	</table>
