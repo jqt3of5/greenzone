@@ -1,4 +1,6 @@
-<!doctype html>
+<?php
+    require_once "login/accesscontrol.php";
+?>
 <html lang="en" >
 <head>
   <meta charset="utf-8">
@@ -6,8 +8,8 @@
   <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
   <link rel="stylesheet" href="css/app.css">
   
-  <script src="../bower_components/angular/angular.js"></script>
-  <script src="../bower_components/angular-route/angular-route.js"></script>
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="bower_components/angular-route/angular-route.js"></script>
   <script src="js/controllers.js"></script>
 </head>
 <body ng-app="toddAtHomeApp">
@@ -18,7 +20,15 @@
 				<p> A place for web development</p>
 			</td>
 			<td id="rightHeader">
-				<a href="login/login.php">Login</a> | <a href="login/signUp.php">Sign Up</a>
+      <?php 
+      if (isset($_SESSION['username']))
+	{
+	  echo "<a href='login/login.php'>$_SESSION[username]</a> | <a href='login/logout.php'>Sign Out</a>";
+	}else{
+	echo "<a href='login/login.php'>Login</a> | <a href='login/signUp.php'>Sign Up</a>";
+      }
+?>
+	
 			</td>
 		</tr>
 	</table>
