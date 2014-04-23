@@ -48,7 +48,7 @@ toddAtHomeApp.controller('CloudController', function($scope, $http) {
 	    });
 	});
     };
-    $http.get('partials/cloud/listFiles.php').success(function(data){
+    $http.get('partials/cloud/listFiles.php?path=').success(function(data){
 	$scope.files = data;
     });
 
