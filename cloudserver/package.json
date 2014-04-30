@@ -1,0 +1,13 @@
+{
+  "version": "0.0.0",
+  "private": true,
+  "name": "cloudserver",
+  "description": "A server to manage the filesystem"
+  "repository": ""
+  "license": "",
+  "devDependencies": {
+  },
+  "scripts": {
+    "start": "nodejs cloudserver.js",
+  }
+}
