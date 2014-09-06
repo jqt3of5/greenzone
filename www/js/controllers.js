@@ -34,16 +34,16 @@ toddAtHomeApp.controller('CloudController', function($scope, $http) {
 	    return "/img/text.jpg";
 	}
     };
-    $scope.downloadFile = function(guid){
-	$http.get('partials/cloud/download.php?guid='+ guid).success(function(data){
+    $scope.downloadFile = function(path){
+	$http.get('partials/cloud/download.php?path='+ path).success(function(data){
 	    var fileView = document.getElementById("fileView");
 	    fileView.style.display= "block";
 	    fileView.innerHTML = data;
 	});
     };
-    $scope.deleteFile = function(guid){
-	$http.get('partials/cloud/delete.php?guid='+guid).success(function(data){
-	    $http.get('partials/cloud/listFiles.php').success(function(data){
+    $scope.deleteFile = function(path){
+	$http.get('partials/cloud/delete.php?path='+path).success(function(data){
+	    $http.get('partials/cloud/listFiles.php?path=').success(function(data){
 		$scope.files = data;
 	    });
 	});

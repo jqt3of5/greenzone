@@ -1,26 +1,37 @@
 <?php require_once "../../login/accesscontrol.php";
 
-$guid = $_GET['guid'];
-
-if (!isset($guid))
+$socket = socket_create(AF_INET, SOCK_STREAM, getprotobyname("tcp"));
+while (!socket_connect($socket, "127.0.0.1", "1337"))
   {
+    $err = socket_last_error($socket);
+    if ($err == 115 || $err == 114)
+      {
+        if ((time() - $time) >= $timeout)
+	  {
+	    socket_close($socket);
+	    die("Connection timed out.\n");
+	  }
+        sleep(1);
+        continue;
+      }
+    die(socket_strerror($err) . "\n");
+  }
+$username = $_SESSION['username'];
+$path = $_GET['path'];
+$buffer = "{\"command\":\"delete\", \"username\" : \"$username\", \"filepath\" : \"$path\"}";
+
+$sentBytes = socket_write($socket, $buffer);
+if ($sentBytes != strlen($buffer))
+  {
+    echo "failed! $sentBytes " . strlen($buffer);
     exit;
   }
-
-$con = mysql_connect($dbhost, $dbuser, $dbpwd) or die("Connection Failed");
-mysql_select_db($db, $con);
-
-$result = mysql_query("SELECT uid FROM users WHERE username='$_SESSION[username]'");
-$uid = mysql_fetch_assoc($result)['uid'];
-
-$result = mysql_query("SELECT filename, size FROM bigFilesTable WHERE guid='$guid' AND uid='$uid'");
-
-if ($row = mysql_fetch_assoc($result))
+$buffer = "";
+$temp = "";
+while ($temp = socket_read($socket, 1000))
   {
-    mysql_query("DELETE FROM bigFilesTable WHERE guid='$guid'");
-    $path = "/home/$_SESSION[username]/uploads/$guid";
-    unlink($path);
+    $buffer = $buffer . $temp;
   }
+echo $buffer;
 
-mysql_close($con);
 ?>

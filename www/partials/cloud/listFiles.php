@@ -18,7 +18,7 @@ while (!socket_connect($socket, "127.0.0.1", "1337"))
   }
 $username = $_SESSION['username'];
 $path = $_GET['path'];
-$buffer = "{\"username\" : \"$username\", \"subpath\" : \"$path\"}";
+$buffer = "{\"command\":\"list\", \"username\" : \"$username\", \"subpath\" : \"$path\"}";
 
 $sentBytes = socket_write($socket, $buffer);
 if ($sentBytes != strlen($buffer))

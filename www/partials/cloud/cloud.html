@@ -23,17 +23,17 @@
 	  </td>
 	</tr>
 	<tr class="fileItem" ng-repeat="file in files" >
-	  <td class="fileTypeImageColumn" ng-click="downloadFile(file.guid)">
+	  <td class="fileTypeImageColumn" ng-click="downloadFile(file.path)">
 	    <img class="fileTypeImageColumn" ng-src="{{fileTypeToImage(file.type)}}"></img>
 	  </td>
 
-	  <td class="nameColumn" ng-click="downloadFile(file.guid)">
+	  <td class="nameColumn" ng-click="downloadFile(file.path)">
 	    {{file.filename}}
 	  </td>
-	  <td class="sizeColumn" ng-click="downloadFile(file.guid)">
+	  <td class="sizeColumn" ng-click="downloadFile(file.path)">
 	    {{file.size}}
 	  </td>
-	  <td class="deleteColumn" ng-click="deleteFile(file.guid)">
+	  <td class="deleteColumn" ng-click="deleteFile(file.path)">
 	    Delete
 	  </td>	
 	</tr>

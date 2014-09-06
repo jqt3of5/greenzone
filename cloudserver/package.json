@@ -2,12 +2,11 @@
   "version": "0.0.0",
   "private": true,
   "name": "cloudserver",
-  "description": "A server to manage the filesystem"
-  "repository": ""
-  "license": "",
-  "devDependencies": {
+  "description": "A server to manage the filesystem",
+  "dependencies": {
+   "mongodb" : "*"
   },
   "scripts": {
-    "start": "nodejs cloudserver.js",
+    "start": "nodejs cloud.js"
   }
 }
